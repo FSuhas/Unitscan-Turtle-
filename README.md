@@ -1,39 +1,42 @@
-# unitscan_turtle    
-[Unitscan](https://github.com/FSuhas/Unitscan-Turtle-) modified for [Turtle WoW](https://turtle-wow.org/).
+# unitscan_turtle
+
+[Unitscan](https://github.com/FSuhas/Unitscan-Turtle-) modifié pour [Turtle WoW](https://turtle-wow.org/).
 
 ## Description
-This fork extends [unitscan-vanilla](https://github.com/FSuhas/Unitscan-Turtle-) by automatically managing active scan targets ([zone targets](https://github.com/GryllsAddons/unitscan-turtle/blob/master/zonetargets.lua)) when you enter a zone.
 
-The [zone targets](https://github.com/GryllsAddons/unitscan-turtle/blob/master/zonetargets.lua) includes all rare mobs in vanilla as a baseline.
+Cette version étend [unitscan-vanilla](https://github.com/FSuhas/Unitscan-Turtle-) en gérant automatiquement les cibles de scan actives ([zone targets](https://github.com/GryllsAddons/unitscan-turtle/blob/master/zonetargets.lua)) lors de l'entrée dans une zone.
 
-This addon has a focus on leveling and [hardcore](https://turtle-wow.org/#/hardcore-mode) which is reflected in the choice of zone targets.
+La liste des [zone targets](https://github.com/GryllsAddons/unitscan-turtle/blob/master/zonetargets.lua) inclut tous les mobs rares de Vanilla par défaut.
 
-You can add custom targets to find players or targets not included in the zone targets list by using the command /unitscan *name*.
+L’addon est orienté leveling et mode [hardcore](https://turtle-wow.org/#/hardcore-mode), ce qui se reflète dans la sélection des cibles par zone.
 
-Unitscan will only look for zone targets specific to your current zone. The target list is reloaded when you change zones.
+Vous pouvez ajouter des cibles personnalisées (joueurs ou mobs non listés dans les zone targets) via la commande `/unitscan *nom*`.
 
-Zone targets will be reloaded 90 seconds after you have found a target (to re-detect roaming targets).
+Unitscan scanne uniquement les cibles spécifiques à votre zone actuelle. La liste des cibles est rechargée à chaque changement de zone.
 
-Unitscan will alert you of NPC targets that you can attack and are alive.
+Les zone targets sont rechargées 90 secondes après la détection d’une cible (pour permettre de re-détecter les cibles errantes).
 
-You will always be alerted for player targets regardless.
+L’addon vous alerte pour les PNJ attaquables et vivants, ainsi que toujours pour les cibles joueurs.
 
-**Unitscan will pause scanning when in combat or when auto attack, auto shoot and wanding are active.**
+**Unitscan suspend le scan quand vous êtes en combat ou quand les attaques automatiques, tir automatique, ou wanding sont activés.**
 
-You can move the unitscan frame by holding ctrl and dragging.
- 
-**Please note unitscan-turtle will not auto target the target when it is found.**    
-**Click the target in the unitscan window or use the macro /unitscantarget to target the mob.**
+Le cadre unitscan peut être déplacé en maintenant la touche Ctrl et en le glissant.
 
-## Addon Compatibility
-Unitscan uses the [TargetByName](https://wowpedia.fandom.com/wiki/API_TargetByName) function to scan through the list of targets to find an exact match. This causes the game to switch targets if the named target is nearby. Unitscan will immediately restore your original target however if you are using addons that do something when you switch targets (such as issue an alert if targets are PvP flagged) then they may trigger for the found target.
+**Note : unitscan-turtle ne cible pas automatiquement la cible détectée.**  
+Cliquez sur la cible dans la fenêtre unitscan ou utilisez la macro `/unitscantarget` pour cibler le mob.
 
-## Commands
-**/unitscan** *Show this list of mobs in the zone*  
-**/unitscan on** *Enable the addon*
-**/unitscan off** *Disable the addon*
-**/unitsound 1, 2 or 3** *Select the alert sound or show current sound*
+## Compatibilité Addon
 
+Unitscan utilise la fonction [TargetByName](https://wowpedia.fandom.com/wiki/API_TargetByName) qui peut changer la cible actuelle si la cible scannée est proche. Unitscan restaure immédiatement votre cible originale, mais certains addons qui réagissent au changement de cible (alertes PvP, etc.) peuvent être déclenchés.
 
-## Updating Zone Targets
-The target list was pulled from classic however please [create an issue](https://github.com/FSuhas/Unitscan-Turtle-/issues) for adding any missing custom Turtle WoW targets or any other dangerous or noteworthy targets.
+## Commandes
+
+- `/unitscan` : Affiche la liste des mobs de la zone.  
+- `/unitscan on` : Active l’addon.  
+- `/unitscan off` : Désactive l’addon.  
+- `/unitsound 1, 2 ou 3` : Choisit le son d’alerte ou affiche le son actuel.
+
+## Mise à jour des Zone Targets
+
+La liste des cibles provient de Classic.  
+Merci de [créer une issue](https://github.com/FSuhas/Unitscan-Turtle-/issues) pour proposer l’ajout de cibles Turtle WoW manquantes, ou d’autres cibles dangereuses ou importantes.
