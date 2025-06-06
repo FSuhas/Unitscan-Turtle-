@@ -33,7 +33,8 @@ Unitscan utilise la fonction [TargetByName](https://wowpedia.fandom.com/wiki/API
 
 - `/unitscan` : Affiche la liste des mobs de la zone.  
 - `/unitscan on` : Active l’addon.  
-- `/unitscan off` : Désactive l’addon.  
+- `/unitscan off` : Désactive l’addon.
+- `/unitscan help` : Affiche l’aide et la liste des commandes disponibles.   
 - `/unitsound 1, 2 ou 3` : Choisit le son d’alerte ou affiche le son actuel.
 
 ## Mise à jour des Zone Targets
