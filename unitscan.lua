@@ -105,13 +105,14 @@ end
 
 -- Activation/désactivation d'un mob
 function unitscan.toggle_target_off(name)
-    local key = strupper(name)
-    if unitscan_targets_off[key] then
-        unitscan_targets_off[key] = nil
-        unitscan.print("Scan enabled for "..key)
+	local key = name
+    local keyUpper = strupper(name)
+    if unitscan_targets_off[keyUpper] then
+        unitscan_targets_off[keyUpper] = nil
+        unitscan.print("Scan |cff00ff00enabled|r for "..key)
     else
-        unitscan_targets_off[key] = true
-        unitscan.print("Scan disabled for "..key)
+        unitscan_targets_off[keyUpper] = true
+        unitscan.print("Scan |cffff0000disabled|r for "..key)
     end
     updateZoneMonsterList()
 end
@@ -655,8 +656,9 @@ function updateZoneMonsterList()
 
     -- Liste désactivés
     for mobName, _ in unitscan_zonetargets do
-		local key = strupper(mobName)
-		if unitscan_targets_off[key] then  -- filtre pour être dans la zone
+		local key = mobName
+		local keyUpper = strupper(mobName)
+		if unitscan_targets_off[keyUpper] then  -- filtre pour être dans la zone
 			i = i + 1
 			local btn = createOrReuseButton(i)
 			btn.mobName = key
@@ -679,8 +681,9 @@ function updateZoneMonsterList()
 
     -- Liste activés (dans la zone)
     for mobName, _ in unitscan_zonetargets do
-        local key = strupper(mobName)
-        if not unitscan_targets_off[key] then
+        local key = mobName
+		local keyUpper = strupper(mobName)
+        if not unitscan_targets_off[keyUpper] then
             i = i + 1
             local btn = createOrReuseButton(i)
             btn.mobName = key
@@ -714,7 +717,7 @@ local function colorText(text, color)
 end
 
 function unitscan.printCommands()
-    unitscan.print(colorText("Available commands:", "FFFFFF00")) -- jaune doré (FF=alpha, FF=rouge, FF=vert, 00=bleu)
+    DEFAULT_CHAT_FRAME:AddMessage("Available commands:", 1, 1, 0) -- Jaune (RGB 255,255,0)
 
     unitscan.print(
         colorText("/unitscan", "FF00BFFF") .. " - " .. -- bleu clair
