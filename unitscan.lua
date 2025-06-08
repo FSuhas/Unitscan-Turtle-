@@ -41,6 +41,33 @@ unitscan:RegisterEvent'PLAYER_LEAVE_COMBAT' -- melee autoattack disabled
 unitscan:RegisterEvent'START_AUTOREPEAT_SPELL' -- ranged autoattack enabled
 unitscan:RegisterEvent'STOP_AUTOREPEAT_SPELL' -- ranged autoattack disabled
 
+local msglog = CreateFrame("Frame")
+msglog:RegisterEvent("PLAYER_ENTERING_WORLD")
+
+local left_chevron = "|cFFFFFFFF< |r"        
+local right_chevron = "|cFFFFFFFF >|r"      
+local name = "|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r"
+
+local function OnPlayerEnteringWorld(self, event)
+    local prefix = "|cffffff00" .. left_chevron .. name .. right_chevron .. " : |r "
+    local welcome = " |cFF00FF00Loaded !|r"
+	local cmd3 = "|cffffff00   More information with :|r"
+    local cmd4 = " |cff00FFFF/unitscan help|r"
+    local footer = " |cffffff00Happy hunting on |r|cFF00FF96Turtle WoW|r|cffffff00 !|r"
+
+    DEFAULT_CHAT_FRAME:AddMessage(prefix .. welcome)
+    DEFAULT_CHAT_FRAME:AddMessage(cmd3 .. cmd4)
+    UIErrorsFrame:AddMessage(footer, 0, 1, 0.6, 0, 5)
+
+    msglog:UnregisterEvent("PLAYER_ENTERING_WORLD")
+end
+
+msglog:SetScript("OnEvent", OnPlayerEnteringWorld)
+
+
+
+
+
 local BROWN = {.7, .15, .05}
 local YELLOW = {1, 1, .15}
 local CHECK_INTERVAL = 1
@@ -466,7 +493,7 @@ function unitscan.print(msg)
     if DEFAULT_CHAT_FRAME then
         local left_chevron = "|cFF00BFFF<|r"        -- bleu clair pour <
         local right_chevron = "|cFF00BFFF>|r"       -- bleu clair pour >
-        local name = "|cFFFFA500UnitScan|r"          -- orange doré pour UnitScan
+        local name = "|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r"          
         DEFAULT_CHAT_FRAME:AddMessage(left_chevron .. name .. right_chevron .. " " .. msg)
     end
 end

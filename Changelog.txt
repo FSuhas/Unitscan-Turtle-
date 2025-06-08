@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 1.4
+Update version to 1.4 and enhance welcome message on player entering world
+
 Version: 1.3
 Enhance zone target definitions for multiple zones, adding new targets and improving existing ones for better gameplay experience.
 
