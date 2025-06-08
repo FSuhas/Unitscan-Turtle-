@@ -1,0 +1,4 @@
+AddOn: Unitscan
+Version: 1.1
+Update version to 1.1, enhance mob detection logic, and clean up zone targets
+Refactor code structure and remove redundant sections for improved readability and maintainability

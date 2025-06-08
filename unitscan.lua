@@ -49,6 +49,8 @@ unitscan_zonetargets = {}
 unitscan_targets = {}
 unitscan_targets_off = {}
 unitscanDB = unitscanDB or {}
+unitscan.detected_mobs = unitscan.detected_mobs or {}
+
 
 
 -- Activation/désactivation d'un mob
@@ -74,7 +76,7 @@ do
 		if not last_played or GetTime() - last_played > 10 then
 			SetCVar('MasterSoundEffects', 0)
 			SetCVar('MasterSoundEffects', 1)
-			local sound_path = "Interface\\AddOns\\unitscan-turtle\\" .. unitscan.selected_sound
+			local sound_path = "Interface\\AddOns\\unitscan-turtle\\Sound\\" .. unitscan.selected_sound
 			PlaySoundFile(sound_path)
 			last_played = GetTime()
 		end
@@ -83,6 +85,10 @@ end
 
 function unitscan.load_zonetargets()
 	unitscan_zone_targets()
+end
+
+function unitscan.resetDetectedMobs()
+	unitscan.detected_mobs = {}
 end
 
 do 
@@ -107,28 +113,56 @@ do
 	end
 
 	function unitscan.check_for_targets()
-		for name, _ in unitscan_zonetargets do
-			if name == unitscan.target(name) then
-				unitscan.foundTarget = name
-				unitscan.toggle_target(name)
-				unitscan.play_sound()
-				unitscan.flash.animation:Play()
-				unitscan.button:set_target()			
+		local currentDetected = {}
+		local targetResults = {}
+		local now = GetTime()
+
+    	unitscan.last_alert_time = unitscan.last_alert_time or {}
+
+		-- Premier passage : récupérer une fois pour chaque name
+		for name, _ in pairs(unitscan_zonetargets) do
+			targetResults[name] = unitscan.target(name)
+		end
+
+		-- 1ère boucle : détection + alerte uniquement si la cible vient d'être trouvée ou si délai écoulé
+		for name, foundName in pairs(targetResults) do
+			local key = foundName and string.upper(foundName) or nil
+			if key then
+				currentDetected[key] = true
+
+				if key == string.upper(name) then
+					local lastAlert = unitscan.last_alert_time[key] or 0
+					if not unitscan.detected_mobs[key] or (now - lastAlert > 30) then
+						unitscan.detected_mobs[key] = true
+						unitscan.foundTarget = name
+						unitscan.play_sound()
+						unitscan.flash.animation:Play()
+						unitscan.button:set_target()
+						unitscan.last_alert_time[key] = now
+					end
+				end
 			end
 			unitscan.restoreTarget()
 		end
 
-		for name, _ in unitscan_zonetargets do
-			if strupper(name) == unitscan.target(name) then
-				unitscan.foundTarget = name		
-				unitscan.toggle_zonetarget(name)
-				unitscan.play_sound()
-				unitscan.flash.animation:Play()
-				unitscan.button:set_target()
+		-- 2ème boucle : actions supplémentaires (toggle, re-alertes sans son ni animation)
+		for name, foundName in pairs(targetResults) do
+			if foundName and string.upper(name) == string.upper(foundName) then
+				unitscan.foundTarget = name
+				unitscan.toggle_zonetarget(name, false)  -- NE PAS jouer son et animation ici
+			end
+		end
+
+		-- Nettoyage des mobs plus détectés
+		for key in pairs(unitscan.detected_mobs) do
+			if not currentDetected[key] then
+				unitscan.detected_mobs[key] = nil
+				unitscan.last_alert_time[key] = nil
 			end
 			unitscan.restoreTarget()
 		end
 	end
+
 
 	function unitscan.target(name)
 		local upperName = string.upper(name)
@@ -141,15 +175,11 @@ do
 			PlaySound = _PlaySound
 
 			foundTarget = UnitName("target")		
-			-- Player target
 			if UnitIsPlayer("target") then
 				return foundTarget and strupper(foundTarget)
-			-- NPC target
 			elseif (not UnitIsDead("target")) and UnitCanAttack("target", "player") then
 				return foundTarget and strupper(foundTarget)
 			end
-		else
-			--
 		end
 	end
 end
@@ -254,7 +284,7 @@ function unitscan.LOAD()
 
 	do
 		local background = button:CreateTexture(nil, 'BACKGROUND')
-		background:SetTexture[[Interface\AddOns\unitscan-turtle\UI-Achievement-Parchment-Horizontal]]
+		background:SetTexture[[Interface\AddOns\unitscan-turtle\UI\UI-Achievement-Parchment-Horizontal]]
 		background:SetPoint('BOTTOMLEFT', 3, 3)
 		background:SetPoint('TOPRIGHT', -3, -3)
 		background:SetTexCoord(0, 1, 0, .25)
@@ -262,7 +292,7 @@ function unitscan.LOAD()
 	
 	do
 		local title_background = button:CreateTexture(nil, 'BORDER')
-		title_background:SetTexture[[Interface\AddOns\unitscan-turtle\UI-Achievement-Title]]
+		title_background:SetTexture[[Interface\AddOns\unitscan-turtle\UI\UI-Achievement-Title]]
 		title_background:SetPoint('TOPRIGHT', -5, -5)
 		title_background:SetPoint('LEFT', 5, 0)
 		title_background:SetHeight(18)
@@ -338,7 +368,7 @@ function unitscan.LOAD()
 		glow:SetPoint('CENTER', button, 'CENTER')
 		glow:SetWidth(400 / 300 * button:GetWidth())
 		glow:SetHeight(171 / 70 * button:GetHeight())
-		glow:SetTexture[[Interface\AddOns\unitscan-turtle\UI-Achievement-Alert-Glow]]
+		glow:SetTexture[[Interface\AddOns\unitscan-turtle\UI\UI-Achievement-Alert-Glow]]
 		glow:SetBlendMode'ADD'
 		glow:SetTexCoord(0, .78125, 0, .66796875)
 		glow:SetAlpha(0)
@@ -368,7 +398,7 @@ function unitscan.LOAD()
 		shine:SetPoint('TOPLEFT', button, 0, 8)
 		shine:SetWidth(67 / 300 * button:GetWidth())
 		shine:SetHeight(1.28 * button:GetHeight())
-		shine:SetTexture[[Interface\AddOns\unitscan-turtle\UI-Achievement-Alert-Glow]]
+		shine:SetTexture[[Interface\AddOns\unitscan-turtle\UI\UI-Achievement-Alert-Glow]]
 		shine:SetBlendMode'ADD'
 		shine:SetTexCoord(.78125, .912109375, 0, .28125)
 		shine:SetAlpha(0)
@@ -410,7 +440,8 @@ do
 				unitscan.last_check = GetTime()
 				if (unitscan.reloadtimer and (unitscan.last_check >= unitscan.reloadtimer)) then
 					unitscan.reloadtimer = nil
-					unitscan.load_zonetargets()			
+					unitscan.load_zonetargets()	
+					unitscan.resetDetectedMobs()		
 					-- unitscan.print('reloaded zone targets')
 				end				
 				unitscan.check_for_targets()
@@ -454,18 +485,23 @@ function unitscan.toggle_target(name)
 	end
 end
 
-function unitscan.toggle_zonetarget(name)
-	local key = name
-	local upperName = string.upper(name)
-	if not unitscan_targets_off[upperName] then
-		if unitscan_zonetargets[key] then
-			unitscan.print(key .. ' was found!')
-			unitscan_zonetargets[key] = nil
-			unitscan.reloadtimer = GetTime() + 90
-		end
-	else
-		--
-	end
+function unitscan.toggle_zonetarget(name, play_alert)
+    local key = string.upper(name)
+    if not unitscan_targets_off[key] and unitscan_zonetargets[key] then
+        if not unitscan.detected_mobs[key] then
+            unitscan.detected_mobs[key] = true
+            unitscan.print(key .. " was found!")
+            if play_alert then
+                unitscan.play_sound()
+                unitscan.flash.animation:Play()
+            end
+            unitscan.button:set_target()
+            unitscan.reloadtimer = GetTime() + 90
+        else
+            -- Même si déjà détecté, on peut éventuellement mettre à jour le bouton
+            unitscan.button:set_target()
+        end
+    end
 end
 
 -- Création de la fenêtre principale
@@ -502,7 +538,7 @@ close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -6)
 close:SetScript("OnClick", function() frame:Hide() end)
 
 -- ScrollFrame simple (WoW 1.12 a le template UIPanelScrollFrameTemplate)
-local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+local scrollFrame = CreateFrame("ScrollFrame", "ScrollFrame_Mobs", frame, "UIPanelScrollFrameTemplate")
 scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -40)
 scrollFrame:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30, 10)
 
@@ -578,16 +614,19 @@ function updateZoneMonsterList()
     offTitleBtn:Show()
 
     -- Liste désactivés
-    for mobName, _ in pairs(unitscan_targets_off) do
-        i = i + 1
-        local btn = createOrReuseButton(i)
-        btn.mobName = mobName
-        btn.text:SetText(mobName)
-        btn.text:SetTextColor(1, 0, 0) -- rouge
-        btn:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -20 * (i - 1))
-        btn:EnableMouse(true)
-        btn:Show()
-    end
+    for mobName, _ in unitscan_zonetargets do
+		local key = strupper(mobName)
+		if unitscan_targets_off[key] then  -- filtre pour être dans la zone
+			i = i + 1
+			local btn = createOrReuseButton(i)
+			btn.mobName = key
+			btn.text:SetText(key)
+			btn.text:SetTextColor(1, 0, 0) -- rouge
+			btn:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -20 * (i - 1))
+			btn:EnableMouse(true)
+			btn:Show()
+		end
+	end
 
     -- Titre activés
     i = i + 1

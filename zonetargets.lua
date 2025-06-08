@@ -143,6 +143,7 @@ function unitscan_zone_targets()
         t["Geolord Mottle"] = true
         t["Warlord Kolkanis"] = true
         t["Watch Commander Zalaphil"] = true
+        -- t["Elder Mottled Boar"] = true
 
     elseif zone == "Duskwood" then
         t["Lord Malathrom"] = true
