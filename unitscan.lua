@@ -491,10 +491,8 @@ end
 
 function unitscan.print(msg)
     if DEFAULT_CHAT_FRAME then
-        local left_chevron = "|cFF00BFFF<|r"        -- bleu clair pour <
-        local right_chevron = "|cFF00BFFF>|r"       -- bleu clair pour >
-        local name = "|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r"          
-        DEFAULT_CHAT_FRAME:AddMessage(left_chevron .. name .. right_chevron .. " " .. msg)
+        local left_chevron = "|cFF00BFFF- |r"        -- bleu clair pour <
+        DEFAULT_CHAT_FRAME:AddMessage(left_chevron .. msg)
     end
 end
 
