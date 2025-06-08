@@ -451,9 +451,12 @@ do
 end
 
 function unitscan.print(msg)
-	if DEFAULT_CHAT_FRAME then
-		DEFAULT_CHAT_FRAME:AddMessage(LIGHTYELLOW_FONT_COLOR_CODE .. '<unitscan> ' .. msg)
-	end
+    if DEFAULT_CHAT_FRAME then
+        local left_chevron = "|cFF00BFFF<|r"        -- bleu clair pour <
+        local right_chevron = "|cFF00BFFF>|r"       -- bleu clair pour >
+        local name = "|cFFFFA500UnitScan|r"          -- orange doré pour UnitScan
+        DEFAULT_CHAT_FRAME:AddMessage(left_chevron .. name .. right_chevron .. " " .. msg)
+    end
 end
 
 function unitscan.sorted_targets()
@@ -668,24 +671,45 @@ frame:SetScript("OnEvent", function(self, event)
 end)
 
 -- /unitscan command
+local function colorText(text, color)
+    return "|c" .. color .. text .. "|r"
+end
+
+function unitscan.printCommands()
+    unitscan.print(colorText("Available commands:", "FFD700")) -- jaune doré
+    
+    unitscan.print(
+        colorText("/unitscan", "00BFFF") .. " - " .. -- bleu clair
+        colorText("Show this list of mobs in the zone", "FFFFFF") -- blanc
+    )
+    unitscan.print(
+        colorText("/unitscan on", "00BFFF") .. " - " ..
+        colorText("Enable the addon", "FFFFFF")
+    )
+    unitscan.print(
+        colorText("/unitscan off", "00BFFF") .. " - " ..
+        colorText("Disable the addon", "FFFFFF")
+    )
+    unitscan.print(
+        colorText("/unitsound 1, 2 or 3", "00BFFF") .. " - " ..
+        colorText("Select the alert sound or show current sound", "FFFFFF")
+    )
+end
+
 SLASH_UNITSCAN1 = '/unitscan'
 function SlashCmdList.UNITSCAN(parameter)
     local _, _, name = string.find(parameter, '^%s*(.-)%s*$')  -- trim spaces
 
     if name == 'on' then
         unitscan.scan = true
-        unitscan.print("Addon enabled.")
+        unitscan.print(colorText("Addon enabled.", "00FF00")) -- vert
         frame:Show()
     elseif name == 'off' then
         unitscan.scan = false
-        unitscan.print("Addon disabled.")
+        unitscan.print(colorText("Addon disabled.", "FF0000")) -- rouge
         frame:Hide()
     elseif name == 'help' then
-        unitscan.print("Available commands:")
-		unitscan.print("/unitscan - Show this list of mobs in the zone")
-        unitscan.print("/unitscan on - Enable the addon")
-        unitscan.print("/unitscan off - Disable the addon")
-        unitscan.print("/unitsound 1, 2 or 3 - Select the alert sound or show current sound")
+        unitscan.printCommands()
     elseif name == '' or name == nil then
         if frame:IsShown() then
             frame:Hide()
@@ -698,17 +722,15 @@ function SlashCmdList.UNITSCAN(parameter)
     end
 end
 
--- /unitscantarget command
 SLASH_UNITSCANTARGET1 = '/unitscantarget'
 function SlashCmdList.UNITSCANTARGET()
     if unitscan.foundTarget then
         TargetByName(unitscan.foundTarget, true)
     else
-        unitscan.print("No target found yet.")
+        unitscan.print(colorText("No target found yet.", "FF4500")) -- orange rouge
     end
 end
 
--- Initialise au démarrage, en dehors de la fonction slash
 function unitscan.OnLoad()
     if not unitscanDB then
         unitscanDB = {}
@@ -718,7 +740,6 @@ function unitscan.OnLoad()
     unitscan.selected_sound_name = unitscanDB.selected_sound_name or "Scourge Horn"
 end
 
--- /unitsound command
 SLASH_UNITSOUND1 = '/unitsound'
 function SlashCmdList.UNITSOUND(msg)
     msg = msg or ""
@@ -748,15 +769,13 @@ function SlashCmdList.UNITSOUND(msg)
         unitscanDB.selected_sound = unitscan.selected_sound
         unitscanDB.selected_sound_name = unitscan.selected_sound_name
 
-        unitscan.print("Sound changed to option " .. choice .. ": " .. unitscan.selected_sound_name)
+        unitscan.print(colorText("Sound changed to option " .. choice .. ": " .. unitscan.selected_sound_name, "00FF00")) -- vert
         unitscan.play_sound()
     else
-        unitscan.print("Current sound: " .. (unitscan.selected_sound_name or "Unknown"))
-        unitscan.print("Choose a sound with /unitsound 1, 2 or 3:")
-        unitscan.print("1 = Scourge Horn")
-        unitscan.print("2 = Event Wardrum Ogre")
-        unitscan.print("3 = Gruntling Horn")
+        unitscan.print(colorText("Current sound: " .. (unitscan.selected_sound_name or "Unknown"), "FFD700")) -- jaune doré
+        unitscan.print(colorText("Choose a sound with /unitsound 1, 2 or 3:", "FFFFFF")) -- blanc
+        unitscan.print(colorText("1 = Scourge Horn", "00BFFF")) -- bleu clair
+        unitscan.print(colorText("2 = Event Wardrum Ogre", "00BFFF"))
+        unitscan.print(colorText("3 = Gruntling Horn", "00BFFF"))
     end
 end
-
-
