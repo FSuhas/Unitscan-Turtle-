@@ -65,9 +65,6 @@ end
 msglog:SetScript("OnEvent", OnPlayerEnteringWorld)
 
 
-
-
-
 local BROWN = {.7, .15, .05}
 local YELLOW = {1, 1, .15}
 local CHECK_INTERVAL = 1
@@ -138,6 +135,67 @@ function unitscan.load_zonetargets()
 	unitscan_zone_targets()
 end
 
+unitscan = unitscan or {}
+unitscan.bigMessageEnabled = true
+
+local BigMessageFrame
+local hideAt = 0
+
+local function MakeFrameDraggable(frame)
+    frame:EnableMouse(true)
+    frame:SetMovable(true)
+
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", function(self)
+        this:StartMoving()
+    end)
+    frame:SetScript("OnDragStop", function(self)
+        this:StopMovingOrSizing()
+
+        local point, _, _, x, y = this:GetPoint()
+        unitscan.bigMessagePosX = x
+        unitscan.bigMessagePosY = y
+        unitscanDB.bigMessagePosX = x
+        unitscanDB.bigMessagePosY = y
+    end)
+end
+
+local function ShowBigMessage(text, r, g, b, duration)
+	if not unitscan.bigMessageEnabled then 
+		return 
+	else
+		duration = duration or 5
+
+		if not BigMessageFrame then
+			BigMessageFrame = CreateFrame("Frame", nil, UIParent)
+			BigMessageFrame:SetHeight(50)
+			BigMessageFrame:SetWidth(600)
+			BigMessageFrame:SetPoint("TOP", UIParent, "TOP", 0, -50)
+
+			BigMessageFrame.msg = BigMessageFrame:CreateFontString(nil, "OVERLAY")
+			BigMessageFrame.msg:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+			BigMessageFrame.msg:SetPoint("CENTER", BigMessageFrame, "CENTER")
+			
+			MakeFrameDraggable(BigMessageFrame)
+
+			BigMessageFrame:SetScript("OnUpdate", function(self, elapsed)
+				if GetTime() >= hideAt then
+					this:Hide()
+					this:SetScript("OnUpdate", nil)
+				end
+			end)
+		end
+
+		BigMessageFrame.msg:SetTextColor(r, g, b)
+		BigMessageFrame.msg:SetText(text)
+		BigMessageFrame:Show()
+		hideAt = GetTime() + duration
+		BigMessageFrame:SetScript("OnUpdate", BigMessageFrame:GetScript("OnUpdate"))
+	end
+end
+
+
+
 do 
 	local prevTarget
 	local foundTarget
@@ -180,6 +238,7 @@ do
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
 				last_detect_time = now  -- MAJ du temps de détection
+				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
 				break  -- On stoppe la boucle après une détection
 			end
 			unitscan.restoreTarget()
@@ -194,6 +253,7 @@ do
 				unitscan.play_sound()
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
+				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
 				last_detect_time = now
 				break  -- idem, on stoppe la boucle après une détection
 			end
@@ -735,6 +795,10 @@ function unitscan.printCommands()
         colorText("/unitsound 1, 2 or 3", "FF00BFFF") .. " - " ..
         colorText("Select the alert sound or show current sound", "FFFFFFFF")
     )
+	unitscan.print(
+        colorText("/unitalert on | off", "FF00BFFF") .. " - " ..
+        colorText("Enable or disable Unit Alerts", "FFFFFFFF")
+    )
 end
 
 SLASH_UNITSCAN1 = '/unitscan'
@@ -821,3 +885,16 @@ function SlashCmdList.UNITSOUND(msg)
     end
 end
 
+SLASH_UNISCANBIGMSG1 = "/unitalert"
+SlashCmdList["UNISCANBIGMSG"] = function(msg)
+    msg = string.lower(msg or "")
+    if msg == "on" then
+        unitscan.bigMessageEnabled = true
+        print("|cff00ff00Unit Alert enabled|r")
+    elseif msg == "off" then
+        unitscan.bigMessageEnabled = false
+        print("|cffff0000Unit Alert disabled|r")
+    else
+        print("Usage: /unitalert on | off")
+    end
+end

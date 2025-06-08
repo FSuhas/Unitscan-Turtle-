@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 1.6
+Add big message functionality and toggle command for unit alerts
+
 Version: 1.5
 Update version to 1.5 and enhance target toggle messages for clarity
 
