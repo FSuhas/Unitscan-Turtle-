@@ -49,7 +49,7 @@ local right_chevron = "|cFFFFFFFF >|r"
 local name = "|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r"
 
 local function OnPlayerEnteringWorld(self, event)
-    local prefix = "|cffffff00" .. left_chevron .. name .. right_chevron .. " : |r "
+    local prefix = "|cffffff00" .. left_chevron .. name .. right_chevron .. " |r "
     local welcome = " |cFF00FF00Loaded !|r"
 	local cmd3 = "|cffffff00   More information with :|r"
     local cmd4 = " |cff00FFFF/unitscan help|r"
