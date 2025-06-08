@@ -51,7 +51,30 @@ unitscan_targets_off = {}
 unitscanDB = unitscanDB or {}
 unitscan.detected_mobs = unitscan.detected_mobs or {}
 
+-- Sauvegarde la fonction native SetRaidTarget
+local Blizzard_SetRaidTarget = SetRaidTarget
 
+-- Vérifie si SuperWoW est chargé
+local function IsSuperWoWLoaded()
+    return SetAutoloot ~= nil
+end
+
+-- Vérifie si le joueur est en groupe ou raid
+local function IsPlayerInPartyOrRaid()
+    return GetNumPartyMembers() > 0 or GetNumRaidMembers() > 0
+end
+
+-- Override SetRaidTarget pour supporter SuperWoW hors groupe
+SetRaidTarget = function(unit, index)
+    local cur_index = GetRaidTargetIndex(unit)
+    local new_index = index
+    if cur_index and cur_index == index then
+        new_index = 0 -- toggle off si déjà posé
+    end
+
+    local target_locally = IsSuperWoWLoaded() and not IsPlayerInPartyOrRaid()
+    Blizzard_SetRaidTarget(unit, new_index, target_locally)
+end
 
 -- Activation/désactivation d'un mob
 function unitscan.toggle_target_off(name)
@@ -87,16 +110,14 @@ function unitscan.load_zonetargets()
 	unitscan_zone_targets()
 end
 
-function unitscan.resetDetectedMobs()
-	unitscan.detected_mobs = {}
-end
-
 do 
 	local prevTarget
 	local foundTarget
 	local _PlaySound = PlaySound
 	local _UIErrorsFrame_OnEvent = UIErrorsFrame_OnEvent
 	local pass = function() end
+
+	local last_detect_time = 0  -- garde la dernière détection
 
 	function unitscan.reset()
 		prevTarget = nil
@@ -113,51 +134,40 @@ do
 	end
 
 	function unitscan.check_for_targets()
-		local currentDetected = {}
-		local targetResults = {}
 		local now = GetTime()
+		local cooldown = 40  -- 60 secondes entre alertes
 
-    	unitscan.last_alert_time = unitscan.last_alert_time or {}
-
-		-- Premier passage : récupérer une fois pour chaque name
-		for name, _ in pairs(unitscan_zonetargets) do
-			targetResults[name] = unitscan.target(name)
+		-- Si on a détecté une cible il y a moins de cooldown, on skip la boucle
+		if now - last_detect_time < cooldown then
+			return
 		end
 
-		-- 1ère boucle : détection + alerte uniquement si la cible vient d'être trouvée ou si délai écoulé
-		for name, foundName in pairs(targetResults) do
-			local key = foundName and string.upper(foundName) or nil
-			if key then
-				currentDetected[key] = true
-
-				if key == string.upper(name) then
-					local lastAlert = unitscan.last_alert_time[key] or 0
-					if not unitscan.detected_mobs[key] or (now - lastAlert > 30) then
-						unitscan.detected_mobs[key] = true
-						unitscan.foundTarget = name
-						unitscan.play_sound()
-						unitscan.flash.animation:Play()
-						unitscan.button:set_target()
-						unitscan.last_alert_time[key] = now
-					end
-				end
+		-- Parcours des unités à scanner
+		for name, _ in pairs(unitscan_targets) do
+			local detectedName = unitscan.target(name)
+			if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
+				unitscan.foundTarget = name
+				unitscan.toggle_target(name)
+				unitscan.play_sound()
+				unitscan.flash.animation:Play()
+				unitscan.button:set_target()
+				last_detect_time = now  -- MAJ du temps de détection
+				break  -- On stoppe la boucle après une détection
 			end
 			unitscan.restoreTarget()
 		end
 
-		-- 2ème boucle : actions supplémentaires (toggle, re-alertes sans son ni animation)
-		for name, foundName in pairs(targetResults) do
-			if foundName and string.upper(name) == string.upper(foundName) then
+		-- Si aucune détection dans unitscan_targets, on peut aussi tester unitscan_zonetargets
+		for name, _ in pairs(unitscan_zonetargets) do
+			local detectedName = unitscan.target(name)
+			if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
 				unitscan.foundTarget = name
-				unitscan.toggle_zonetarget(name, false)  -- NE PAS jouer son et animation ici
-			end
-		end
-
-		-- Nettoyage des mobs plus détectés
-		for key in pairs(unitscan.detected_mobs) do
-			if not currentDetected[key] then
-				unitscan.detected_mobs[key] = nil
-				unitscan.last_alert_time[key] = nil
+				unitscan.toggle_zonetarget(name)
+				unitscan.play_sound()
+				unitscan.flash.animation:Play()
+				unitscan.button:set_target()
+				last_detect_time = now
+				break  -- idem, on stoppe la boucle après une détection
 			end
 			unitscan.restoreTarget()
 		end
@@ -165,24 +175,26 @@ do
 
 
 	function unitscan.target(name)
-		local upperName = string.upper(name)
-		if not unitscan_targets_off[upperName] then
-			prevTarget = UnitName("target")		
-			UIErrorsFrame_OnEvent = pass	
-			PlaySound = pass
-			TargetByName(name, true)
-			UIErrorsFrame_OnEvent = _UIErrorsFrame_OnEvent
-			PlaySound = _PlaySound
+		prevTarget = UnitName("target")		
+		UIErrorsFrame_OnEvent = pass	
+		PlaySound = pass
+		TargetByName(name, true)
+		UIErrorsFrame_OnEvent = _UIErrorsFrame_OnEvent
+		PlaySound = _PlaySound
 
-			foundTarget = UnitName("target")		
-			if UnitIsPlayer("target") then
-				return foundTarget and strupper(foundTarget)
-			elseif (not UnitIsDead("target")) and UnitCanAttack("target", "player") then
-				return foundTarget and strupper(foundTarget)
-			end
+		foundTarget = UnitName("target")	
+		if (not UnitIsDead("target")) and UnitCanAttack("target", "player") and foundTarget and foundTarget ~= '' then
+			SetRaidTarget("target", 8)
+		end	
+
+		if UnitIsPlayer("target") then
+			return foundTarget and strupper(foundTarget)
+		elseif (not UnitIsDead("target")) and UnitCanAttack("target", "player") then
+			return foundTarget and strupper(foundTarget)
 		end
 	end
 end
+
 
 function unitscan.LOAD()
 	do

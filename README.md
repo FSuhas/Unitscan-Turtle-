@@ -33,7 +33,7 @@ Unitscan utilise la fonction [TargetByName](https://wowpedia.fandom.com/wiki/API
 
 - `/unitscan` : Affiche la liste des mobs de la zone.  
 - `/unitscan on` : Active l’addon.  
-- `/unitscan off` : Désactive l’addon.
+- `/unitscan off` : Désactive l’addon.  
 - `/unitscan help` : Affiche l’aide et la liste des commandes disponibles.   
 - `/unitsound 1, 2 ou 3` : Choisit le son d’alerte ou affiche le son actuel.
 
@@ -41,3 +41,11 @@ Unitscan utilise la fonction [TargetByName](https://wowpedia.fandom.com/wiki/API
 
 La liste des cibles provient de Classic.  
 Merci de [créer une issue](https://github.com/FSuhas/Unitscan-Turtle-/issues) pour proposer l’ajout de cibles Turtle WoW manquantes, ou d’autres cibles dangereuses ou importantes.
+
+## Note sur l’icône Skull (marque de raid)
+
+Si l’addon [SuperWoW](https://github.com/balakethelock/SuperWoW) est installé et actif, **unitscan-turtle** utilise une fonction spécifique pour poser automatiquement l’icône de raid « Skull » (marque raid numéro 8) sur la cible détectée, même si vous n’êtes pas en groupe ou raid.
+
+Cela améliore la visibilité de la cible rare sans nécessiter d’appartenir à un groupe, grâce à une intégration avec SuperWoW qui étend la gestion des icônes de raid.
+
+Si SuperWoW n’est pas installé, l’icône sera posée uniquement lorsque vous êtes dans un groupe ou raid, selon le comportement standard de World of Warcraft Vanilla.
