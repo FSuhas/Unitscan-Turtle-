@@ -640,7 +640,10 @@ frame.title:SetPoint("TOP", frame, "TOP", 0, -10)
 -- Bouton Fermer
 local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -6)
-close:SetScript("OnClick", function() frame:Hide() end)
+close:SetScript("OnClick", function()
+    frame:Hide()
+    BigMessageFrame:Hide()
+end)
 
 -- ScrollFrame simple (WoW 1.12 a le template UIPanelScrollFrameTemplate)
 local scrollFrame = CreateFrame("ScrollFrame", "ScrollFrame_Mobs", frame, "UIPanelScrollFrameTemplate")
@@ -771,6 +774,7 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event)
     if "MINIMAP_ZONE_CHANGED" or "PLAYER_ENTERING_WORLD" then
         updateZoneMonsterList()
+		BigMessageFrame:Hide()
     end
 end)
 
