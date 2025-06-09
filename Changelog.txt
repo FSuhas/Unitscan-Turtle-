@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 1.7
+Update version to 1.7 and add functionality to set raid target for detected units
+
 Version: 1.6
 Add big message functionality and toggle command for unit alerts
 

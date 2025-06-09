@@ -36,6 +36,7 @@ Unitscan utilise la fonction [TargetByName](https://wowpedia.fandom.com/wiki/API
 - `/unitscan off` : Désactive l’addon.  
 - `/unitscan help` : Affiche l’aide et la liste des commandes disponibles.   
 - `/unitsound 1, 2 ou 3` : Choisit le son d’alerte ou affiche le son actuel.
+- `/unitalert on | off` : Activer ou désactiver les alertes d'unité.
 
 ## Mise à jour des Zone Targets
 

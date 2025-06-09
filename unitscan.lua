@@ -239,6 +239,9 @@ do
 				unitscan.button:set_target()
 				last_detect_time = now  -- MAJ du temps de détection
 				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
+				if (not UnitIsDead("target")) and UnitCanAttack("target", "player") and foundTarget and foundTarget ~= '' then
+					SetRaidTarget("target", 8)
+				end	
 				break  -- On stoppe la boucle après une détection
 			end
 			unitscan.restoreTarget()
@@ -254,6 +257,9 @@ do
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
 				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
+				if (not UnitIsDead("target")) and UnitCanAttack("target", "player") and foundTarget and foundTarget ~= '' then
+					SetRaidTarget("target", 8)
+				end	
 				last_detect_time = now
 				break  -- idem, on stoppe la boucle après une détection
 			end
@@ -271,9 +277,7 @@ do
 		PlaySound = _PlaySound
 
 		foundTarget = UnitName("target")	
-		if (not UnitIsDead("target")) and UnitCanAttack("target", "player") and foundTarget and foundTarget ~= '' then
-			SetRaidTarget("target", 8)
-		end	
+		
 
 		if UnitIsPlayer("target") then
 			return foundTarget and strupper(foundTarget)
