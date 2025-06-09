@@ -774,7 +774,9 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event)
     if "MINIMAP_ZONE_CHANGED" or "PLAYER_ENTERING_WORLD" then
         updateZoneMonsterList()
-		BigMessageFrame:Hide()
+		 if BigMessageFrame and BigMessageFrame:IsShown() then
+            BigMessageFrame:Hide()
+        end
     end
 end)
 

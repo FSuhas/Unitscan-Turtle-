@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 1.9
+Update version to 1.9 and enhance BigMessageFrame hiding logic on zone change events
+
 Version: 1.8
 Update version to 1.8 and enhance close button functionality to hide BigMessageFrame
 
