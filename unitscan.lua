@@ -237,7 +237,7 @@ do
 
 	function unitscan.check_for_targets()
 		local now = GetTime()
-		local cooldown = 10
+		local cooldown = 30
 		if now - last_detect_time < cooldown then return end
 
 		mark_index = 1
