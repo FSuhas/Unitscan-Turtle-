@@ -69,11 +69,12 @@ local BROWN = {.7, .15, .05}
 local YELLOW = {1, 1, .15}
 local CHECK_INTERVAL = 1
 
-unitscan_zonetargets = {}
 unitscan_targets = {}
 unitscan_targets_off = {}
 unitscanDB = unitscanDB or {}
+unitscanDB.zoneTargetMode = unitscanDB.zoneTargetMode or "normal"  -- "normal" ou "hardcore"
 unitscan.detected_mobs = unitscan.detected_mobs or {}
+unitscan_zonetargets = {}
 
 -- Sauvegarde la fonction native SetRaidTarget
 local Blizzard_SetRaidTarget = SetRaidTarget
@@ -121,6 +122,10 @@ do
 	unitscan.selected_sound_name = unitscanDB.selected_sound_name or "Scourge Horn"
 
 	function unitscan.play_sound()
+		if not unitscan.selected_sound or unitscan.selected_sound == "" then
+        -- Son muet, ne rien faire
+			return
+		end
 		if not last_played or GetTime() - last_played > 10 then
 			SetCVar('MasterSoundEffects', 0)
 			SetCVar('MasterSoundEffects', 1)
@@ -132,8 +137,17 @@ do
 end
 
 function unitscan.load_zonetargets()
-	unitscan_zone_targets()
+    if unitscanDB.zoneTargetMode == "normal" then
+        unitscan_zone_targets()
+		updateZoneMonsterList()
+    else
+        unitscan_zone_targets_hc()
+		updateZoneMonsterList()
+    end
 end
+
+
+
 
 unitscan = unitscan or {}
 unitscan.bigMessageEnabled = true
@@ -159,6 +173,7 @@ local function MakeFrameDraggable(frame)
         unitscanDB.bigMessagePosY = y
     end)
 end
+
 
 local function ShowBigMessage(text, r, g, b, duration)
 	if not unitscan.bigMessageEnabled then 
@@ -195,15 +210,16 @@ local function ShowBigMessage(text, r, g, b, duration)
 end
 
 
-
-do 
+do
 	local prevTarget
 	local foundTarget
 	local _PlaySound = PlaySound
 	local _UIErrorsFrame_OnEvent = UIErrorsFrame_OnEvent
+	local available_marks = {8, 7, 6, 5, 4, 3, 2, 1}
+	local mark_index = 1
 	local pass = function() end
 
-	local last_detect_time = 0  -- garde la dernière détection
+	local last_detect_time = 0
 
 	function unitscan.reset()
 		prevTarget = nil
@@ -221,15 +237,30 @@ do
 
 	function unitscan.check_for_targets()
 		local now = GetTime()
-		local cooldown = 40  -- 60 secondes entre alertes
+		local cooldown = 10
+		if now - last_detect_time < cooldown then return end
 
-		-- Si on a détecté une cible il y a moins de cooldown, on skip la boucle
-		if now - last_detect_time < cooldown then
-			return
+		mark_index = 1
+
+		local function mark_target()
+			if not UnitIsDead("target")
+			and UnitCanAttack("target", "player")
+			and foundTarget
+			and foundTarget ~= '' then
+				local currentMark = GetRaidTargetIndex("target") or 0
+				local mark = available_marks[mark_index]
+				if mark and currentMark ~= mark then
+					SetRaidTarget("target", mark)
+					mark_index = mark_index + 1
+				end
+			elseif UnitIsDead("target") then
+				SetRaidTarget("target", 0)
+			end
 		end
 
-		-- Parcours des unités à scanner
 		for name, _ in pairs(unitscan_targets) do
+			if available_marks[mark_index] == nil then break end
+
 			local detectedName = unitscan.target(name)
 			if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
 				unitscan.foundTarget = name
@@ -237,18 +268,17 @@ do
 				unitscan.play_sound()
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
-				last_detect_time = now  -- MAJ du temps de détection
 				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
-				if (not UnitIsDead("target")) and UnitCanAttack("target", "player") and foundTarget and foundTarget ~= '' then
-					SetRaidTarget("target", 8)
-				end	
-				break  -- On stoppe la boucle après une détection
+
+				mark_target()
+				last_detect_time = now
 			end
 			unitscan.restoreTarget()
 		end
 
-		-- Si aucune détection dans unitscan_targets, on peut aussi tester unitscan_zonetargets
 		for name, _ in pairs(unitscan_zonetargets) do
+			if available_marks[mark_index] == nil then break end
+
 			local detectedName = unitscan.target(name)
 			if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
 				unitscan.foundTarget = name
@@ -257,27 +287,23 @@ do
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
 				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
-				if (not UnitIsDead("target")) and UnitCanAttack("target", "player") and foundTarget and foundTarget ~= '' then
-					SetRaidTarget("target", 8)
-				end	
+
+				mark_target()
 				last_detect_time = now
-				break  -- idem, on stoppe la boucle après une détection
 			end
 			unitscan.restoreTarget()
 		end
 	end
 
-
 	function unitscan.target(name)
-		prevTarget = UnitName("target")		
-		UIErrorsFrame_OnEvent = pass	
+		prevTarget = UnitName("target")
+		UIErrorsFrame_OnEvent = pass
 		PlaySound = pass
-		TargetByName(name, true)
+		TargetByName(name)  -- Pas de second argument "true" en 1.12
 		UIErrorsFrame_OnEvent = _UIErrorsFrame_OnEvent
 		PlaySound = _PlaySound
 
-		foundTarget = UnitName("target")	
-		
+		foundTarget = UnitName("target")
 
 		if UnitIsPlayer("target") then
 			return foundTarget and strupper(foundTarget)
@@ -794,21 +820,21 @@ function unitscan.printCommands()
         colorText("Show this list of mobs in the zone", "FFFFFFFF") -- blanc
     )
     unitscan.print(
-        colorText("/unitscan on", "FF00BFFF") .. " - " ..
-        colorText("Enable the addon", "FFFFFFFF")
+        colorText("/unitscan on / off", "FF00BFFF") .. " - " ..
+        colorText("Enable / Disable the addon", "FFFFFFFF")
     )
     unitscan.print(
-        colorText("/unitscan off", "FF00BFFF") .. " - " ..
-        colorText("Disable the addon", "FFFFFFFF")
-    )
-    unitscan.print(
-        colorText("/unitsound 1, 2 or 3", "FF00BFFF") .. " - " ..
+        colorText("/unitsound 1, 2, 3 or 4", "FF00BFFF") .. " - " ..
         colorText("Select the alert sound or show current sound", "FFFFFFFF")
     )
 	unitscan.print(
         colorText("/unitalert on | off", "FF00BFFF") .. " - " ..
         colorText("Enable or disable Unit Alerts", "FFFFFFFF")
     )
+	unitscan.print(
+		colorText("/unitmode nm | hc", "FF00BFFF") .. " - " ..
+		colorText("Switch between normal and hardcore modes", "FFFFFFFF")
+	)
 end
 
 SLASH_UNITSCAN1 = '/unitscan'
@@ -818,11 +844,10 @@ function SlashCmdList.UNITSCAN(parameter)
     if name == 'on' then
         unitscan.scan = true
         unitscan.print(colorText("Addon enabled.", "FF00FF00")) -- vert
-        frame:Show()
     elseif name == 'off' then
+		BigMessageFrame:Hide()
         unitscan.scan = false
         unitscan.print(colorText("Addon disabled.", "FFFF0000")) -- rouge
-        frame:Hide()
     elseif name == 'help' then
         unitscan.printCommands()
     elseif name == '' or name == nil then
@@ -868,13 +893,15 @@ function SlashCmdList.UNITSOUND(msg)
     local sounds = {
         ["1"] = "scourge_horn.ogg",
         ["2"] = "event_wardrum_ogre.ogg",
-        ["3"] = "gruntling_horn_bb.ogg"
+        ["3"] = "gruntling_horn_bb.ogg",
+		["4"] = ""
     }
 
     local soundNames = {
         ["1"] = "Scourge Horn",
         ["2"] = "Event Wardrum Ogre",
-        ["3"] = "Gruntling Horn"
+        ["3"] = "Gruntling Horn",
+		["4"] = "Mute"
     }
 
     if choice and sounds[choice] then
@@ -885,13 +912,17 @@ function SlashCmdList.UNITSOUND(msg)
         unitscanDB.selected_sound_name = unitscan.selected_sound_name
 
         unitscan.print(colorText("Sound changed to option " .. choice .. ": " .. unitscan.selected_sound_name, "FF00FF00")) -- vert
-        unitscan.play_sound()
+
+		if unitscan.selected_sound then
+			unitscan.play_sound()
+		end
     else
         unitscan.print(colorText("Current sound: " .. (unitscan.selected_sound_name or "Unknown"), "FFFFFF00")) -- jaune doré
-        unitscan.print(colorText("Choose a sound with /unitsound 1, 2 or 3:", "FFFFFFFF")) -- blanc
+        unitscan.print(colorText("Choose a sound with /unitsound 1, 2, 3 or 4:", "FFFFFFFF")) -- blanc
         unitscan.print(colorText("1 = Scourge Horn", "FF00BFFF")) -- bleu clair
         unitscan.print(colorText("2 = Event Wardrum Ogre", "FF00BFFF"))
         unitscan.print(colorText("3 = Gruntling Horn", "FF00BFFF"))
+		unitscan.print(colorText("4 = Mute", "FF00BFFF"))
     end
 end
 
@@ -907,4 +938,23 @@ SlashCmdList["UNISCANBIGMSG"] = function(msg)
     else
         print("Usage: /unitalert on | off")
     end
+end
+
+SLASH_UNITSCANMODE1 = "/unitmode"
+SlashCmdList["UNITSCANMODE"] = function(msg)
+    msg = strlower(msg)
+    if msg == "hc" or msg == "hardcore" then
+        unitscanDB.zoneTargetMode = "hardcore"
+        updateZoneMonsterList()
+        unitscan.print("Mode changed to: |cffff0000Hardcore|r")
+    elseif msg == "normal" or msg == "nm" then
+        unitscanDB.zoneTargetMode = "normal"
+        updateZoneMonsterList()
+        unitscan.print("Mode changed to: |cff00ff00Normal|r")
+    else
+        unitscan.print("Usage: /unitmode normal | hc")
+        return
+    end
+
+    unitscan.load_zonetargets()
 end

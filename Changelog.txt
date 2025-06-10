@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 2.0
+Update version to 2.0 and implement zone target mode switching between normal and hardcore
+
 Version: 1.9
 Update version to 1.9 and enhance BigMessageFrame hiding logic on zone change events
 
