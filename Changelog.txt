@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 2.1
+Update version to 2.1 and initialize database settings for unitscan functionality
+
 Version: 2.0
 Update version to 2.0 and implement zone target mode switching between normal and hardcore
 

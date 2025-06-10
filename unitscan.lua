@@ -2,8 +2,12 @@ local unitscan = CreateFrame'Frame'
 unitscan:SetScript('OnUpdate', function() unitscan.UPDATE() end)
 unitscan:SetScript('OnEvent', function() 
 	if event == "VARIABLES_LOADED" then
+		unitscanDB = unitscanDB or {}
+		unitscanDB.unitscan = unitscanDB.unitscan or {}
+		unitscan.scan = unitscanDB.unitscan.scan ~= false
+		unitscan.bigMessageEnabled = unitscanDB.bigMessageEnabled ~= false
+
 		unitscan.LOAD()
-		unitscan.scan = true
 	elseif event == "PLAYER_REGEN_DISABLED" then
 		-- in combat
 		-- disable scanning
@@ -74,6 +78,7 @@ unitscan_targets_off = {}
 unitscanDB = unitscanDB or {}
 unitscanDB.zoneTargetMode = unitscanDB.zoneTargetMode or "normal"  -- "normal" ou "hardcore"
 unitscan.detected_mobs = unitscan.detected_mobs or {}
+unitscanDB.unitscan = unitscanDB.unitscan or {}
 unitscan_zonetargets = {}
 
 -- Sauvegarde la fonction native SetRaidTarget
@@ -147,10 +152,7 @@ function unitscan.load_zonetargets()
 end
 
 
-
-
 unitscan = unitscan or {}
-unitscan.bigMessageEnabled = true
 
 local BigMessageFrame
 local hideAt = 0
@@ -843,28 +845,37 @@ SLASH_UNITSCAN1 = '/unitscan'
 function SlashCmdList.UNITSCAN(parameter)
     local _, _, name = string.find(parameter, '^%s*(.-)%s*$')  -- trim spaces
 
+    -- Assurer que la DB est bien initialisée
+    unitscanDB.unitscan = unitscanDB.unitscan or {}
+
     if name == 'on' then
         unitscan.scan = true
+        unitscanDB.unitscan.scan = true
         unitscan.print(colorText("Addon enabled.", "FF00FF00")) -- vert
+
     elseif name == 'off' then
-		if BigMessageFrame and BigMessageFrame:IsShown() then
-        	BigMessageFrame:Hide()
-    	end
+        if BigMessageFrame and BigMessageFrame:IsShown() then
+            BigMessageFrame:Hide()
+        end
         unitscan.scan = false
+        unitscanDB.unitscan.scan = false
         unitscan.print(colorText("Addon disabled.", "FFFF0000")) -- rouge
+
     elseif name == 'help' then
         unitscan.printCommands()
+
     elseif name == '' or name == nil then
-        if frame:IsShown() then
-            frame:Hide()
+        if  frame:IsShown() then
+			frame:Hide()
         else
             updateZoneMonsterList()
-            frame:Show()
+			frame:Show()
         end
     else
         unitscan.toggle_target(name)
     end
 end
+
 
 SLASH_UNITSCANTARGET1 = '/unitscantarget'
 function SlashCmdList.UNITSCANTARGET()
@@ -935,9 +946,11 @@ SlashCmdList["UNISCANBIGMSG"] = function(msg)
     msg = string.lower(msg or "")
     if msg == "on" then
         unitscan.bigMessageEnabled = true
+		unitscanDB.bigMessageEnabled = true
         print("|cff00ff00Unit Alert enabled|r")
     elseif msg == "off" then
         unitscan.bigMessageEnabled = false
+		unitscanDB.bigMessageEnabled = false
         print("|cffff0000Unit Alert disabled|r")
     else
         print("Usage: /unitalert on | off")
