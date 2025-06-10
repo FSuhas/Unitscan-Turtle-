@@ -845,7 +845,9 @@ function SlashCmdList.UNITSCAN(parameter)
         unitscan.scan = true
         unitscan.print(colorText("Addon enabled.", "FF00FF00")) -- vert
     elseif name == 'off' then
-		BigMessageFrame:Hide()
+		if BigMessageFrame and BigMessageFrame:IsShown() then
+        	BigMessageFrame:Hide()
+    	end
         unitscan.scan = false
         unitscan.print(colorText("Addon disabled.", "FFFF0000")) -- rouge
     elseif name == 'help' then
