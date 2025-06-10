@@ -668,7 +668,9 @@ local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -6)
 close:SetScript("OnClick", function()
     frame:Hide()
-    BigMessageFrame:Hide()
+    if BigMessageFrame and BigMessageFrame:IsShown() then
+		BigMessageFrame:Hide()
+	end
 end)
 
 -- ScrollFrame simple (WoW 1.12 a le template UIPanelScrollFrameTemplate)
