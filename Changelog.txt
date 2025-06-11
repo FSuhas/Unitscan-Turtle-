@@ -1,4 +1,7 @@
 AddOn: Unitscan
+Version: 2.2
+Refactor event handling and initialization logic in UnitScan addon
+
 Version: 2.1
 Update version to 2.1 and initialize database settings for unitscan functionality
 

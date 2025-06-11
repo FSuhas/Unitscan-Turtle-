@@ -1,40 +1,36 @@
-local unitscan = CreateFrame'Frame'
+--[[
+Addon : UnitScan Turtle WoW 1.12
+But : Détection de mobs rares et marquage automatique avec son + message visuel
+Auteur : Optimisé pour Turtle WoW, version intégrée
+]]--
+
+-- === Initialisation === --
+local unitscan = CreateFrame("Frame")
 unitscan:SetScript('OnUpdate', function() unitscan.UPDATE() end)
-unitscan:SetScript('OnEvent', function() 
-	if event == "VARIABLES_LOADED" then
+unitscan:SetScript("OnEvent", function()
+    if event == "VARIABLES_LOADED" then
 		unitscanDB = unitscanDB or {}
-		unitscanDB.unitscan = unitscanDB.unitscan or {}
-		unitscan.scan = unitscanDB.unitscan.scan ~= false
-		unitscan.bigMessageEnabled = unitscanDB.bigMessageEnabled ~= false
+        unitscanDB.unitscan = unitscanDB.unitscan or {}
+        unitscan.scan = unitscanDB.unitscan.scan ~= false
+        unitscan.bigMessageEnabled = unitscanDB.bigMessageEnabled ~= false
 
 		unitscan.LOAD()
-	elseif event == "PLAYER_REGEN_DISABLED" then
-		-- in combat
-		-- disable scanning
-		unitscan.incombat = true
-		unitscan.scan = nil
-	elseif event == "PLAYER_REGEN_ENABLED" then
-		-- out of combat
-		-- enable scanning
-		unitscan.incombat = nil
-		unitscan.scan = true
-	elseif (event == "PLAYER_ENTER_COMBAT" or event == "START_AUTOREPEAT_SPELL") then
-		-- melee autoattack / ranged autoattack enabled
-		-- disable scanning if not in combat
-		if not unitscan.incombat then
-			unitscan.scan = nil
-		end
-	elseif (event == "STOP_AUTOREPEAT_SPELL" or event == "PLAYER_LEAVE_COMBAT") then
-		-- melee / ranged autoattack disabled
-		-- enable scanning if not in combat
-		if not unitscan.incombat then
-			unitscan.scan = true
-		end
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        unitscan.incombat = true
+        unitscan.scan = nil
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        unitscan.incombat = nil
+        unitscan.scan = true
+    elseif (event == "PLAYER_ENTER_COMBAT" or event == "START_AUTOREPEAT_SPELL") then
+        if not unitscan.incombat then unitscan.scan = nil end
+    elseif (event == "STOP_AUTOREPEAT_SPELL" or event == "PLAYER_LEAVE_COMBAT") then
+        if not unitscan.incombat then unitscan.scan = true end
 	else
 		unitscan.load_zonetargets()
-	end
+    end
 end)
 
+-- === Enregistrement des événements === --
 unitscan:RegisterEvent'VARIABLES_LOADED'
 unitscan:RegisterEvent'MINIMAP_ZONE_CHANGED'
 unitscan:RegisterEvent'PLAYER_ENTERING_WORLD'
@@ -45,41 +41,42 @@ unitscan:RegisterEvent'PLAYER_LEAVE_COMBAT' -- melee autoattack disabled
 unitscan:RegisterEvent'START_AUTOREPEAT_SPELL' -- ranged autoattack enabled
 unitscan:RegisterEvent'STOP_AUTOREPEAT_SPELL' -- ranged autoattack disabled
 
+
+
 local msglog = CreateFrame("Frame")
 msglog:RegisterEvent("PLAYER_ENTERING_WORLD")
-
-local left_chevron = "|cFFFFFFFF< |r"        
-local right_chevron = "|cFFFFFFFF >|r"      
-local name = "|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r"
-
-local function OnPlayerEnteringWorld(self, event)
-    local prefix = "|cffffff00" .. left_chevron .. name .. right_chevron .. " |r "
-    local welcome = " |cFF00FF00Loaded !|r"
-	local cmd3 = "|cffffff00   More information with :|r"
-    local cmd4 = " |cff00FFFF/unitscan help|r"
-    local footer = " |cffffff00Happy hunting on |r|cFF00FF96Turtle WoW|r|cffffff00 !|r"
-
-    DEFAULT_CHAT_FRAME:AddMessage(prefix .. welcome)
-    DEFAULT_CHAT_FRAME:AddMessage(cmd3 .. cmd4)
-    UIErrorsFrame:AddMessage(footer, 0, 1, 0.6, 0, 5)
-
+msglog:SetScript("OnEvent", function()
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00< |r|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r|cffffff00 >|r |cFF00FF00Chargé !|r")
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00   Plus d'options :|r |cff00FFFF/unitscan help|r")
+    UIErrorsFrame:AddMessage("|cffffff00Bon jeu sur |r|cFF00FF96Turtle WoW|r|cffffff00 !|r", 0, 1, 0.6, 0, 5)
     msglog:UnregisterEvent("PLAYER_ENTERING_WORLD")
-end
+end)
 
-msglog:SetScript("OnEvent", OnPlayerEnteringWorld)
+
+unitscanDB = unitscanDB or {}
+unitscanDB.unitscan = unitscanDB.unitscan or {}
+
+unitscan.last_alert_time_targets = {}
+unitscan.last_alert_time_zonetargets = {}
+
+unitscan.ALERT_COOLDOWN_TARGETS = 90
+unitscan.ALERT_COOLDOWN_ZONETARGETS = 90
+
+unitscan.detected_mobs = unitscan.detected_mobs or {}
+unitscan_targets = {}
+unitscan_targets_off = {}
+unitscan_zonetargets = {}
+
+unitscanDB.zoneTargetMode = unitscanDB.zoneTargetMode or "normal"  -- "normal" ou "hardcore"
+unitscan.bigMessageEnabled = unitscanDB.bigMessageEnabled ~= false
+unitscan.selected_sound = unitscanDB.selected_sound or "scourge_horn.ogg"
+unitscan.selected_sound_name = unitscanDB.selected_sound_name or "Scourge Horn"
 
 
 local BROWN = {.7, .15, .05}
 local YELLOW = {1, 1, .15}
-local CHECK_INTERVAL = 1
+unitscan.CHECK_INTERVAL = unitscan.CHECK_INTERVAL or 1
 
-unitscan_targets = {}
-unitscan_targets_off = {}
-unitscanDB = unitscanDB or {}
-unitscanDB.zoneTargetMode = unitscanDB.zoneTargetMode or "normal"  -- "normal" ou "hardcore"
-unitscan.detected_mobs = unitscan.detected_mobs or {}
-unitscanDB.unitscan = unitscanDB.unitscan or {}
-unitscan_zonetargets = {}
 
 -- Sauvegarde la fonction native SetRaidTarget
 local Blizzard_SetRaidTarget = SetRaidTarget
@@ -141,6 +138,10 @@ do
 	end
 end
 
+
+-- =========================
+-- ZONE TARGET LOAD
+-- =========================
 function unitscan.load_zonetargets()
     if unitscanDB.zoneTargetMode == "normal" then
         unitscan_zone_targets()
@@ -152,22 +153,21 @@ function unitscan.load_zonetargets()
 end
 
 
-unitscan = unitscan or {}
-
+-- =========================
+-- BIG MESSAGE UI
+-- =========================
 local BigMessageFrame
 local hideAt = 0
 
 local function MakeFrameDraggable(frame)
     frame:EnableMouse(true)
     frame:SetMovable(true)
-
     frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart", function(self)
         this:StartMoving()
     end)
     frame:SetScript("OnDragStop", function(self)
         this:StopMovingOrSizing()
-
         local point, _, _, x, y = this:GetPoint()
         unitscan.bigMessagePosX = x
         unitscan.bigMessagePosY = y
@@ -176,145 +176,152 @@ local function MakeFrameDraggable(frame)
     end)
 end
 
+function ShowBigMessage(text, r, g, b, duration)
+    if not unitscanDB.bigMessageEnabled then return end
 
-local function ShowBigMessage(text, r, g, b, duration)
-	if not unitscan.bigMessageEnabled then 
-		return 
-	else
-		duration = duration or 5
+    duration = duration or 5
 
-		if not BigMessageFrame then
-			BigMessageFrame = CreateFrame("Frame", nil, UIParent)
-			BigMessageFrame:SetHeight(50)
-			BigMessageFrame:SetWidth(600)
-			BigMessageFrame:SetPoint("TOP", UIParent, "TOP", 0, -50)
+    if not BigMessageFrame then
+        BigMessageFrame = CreateFrame("Frame", nil, UIParent)
+        BigMessageFrame:SetHeight(50)
+        BigMessageFrame:SetWidth(600)
+        BigMessageFrame:SetPoint("TOP", UIParent, "TOP", 0, -50)
 
-			BigMessageFrame.msg = BigMessageFrame:CreateFontString(nil, "OVERLAY")
-			BigMessageFrame.msg:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
-			BigMessageFrame.msg:SetPoint("CENTER", BigMessageFrame, "CENTER")
-			
-			MakeFrameDraggable(BigMessageFrame)
+        BigMessageFrame.msg = BigMessageFrame:CreateFontString(nil, "OVERLAY")
+        BigMessageFrame.msg:SetFont("Fonts\\FRIZQT__.TTF", 24, "OUTLINE")
+        BigMessageFrame.msg:SetPoint("CENTER", BigMessageFrame, "CENTER")
 
-			BigMessageFrame:SetScript("OnUpdate", function(self, elapsed)
-				if GetTime() >= hideAt then
-					this:Hide()
-					this:SetScript("OnUpdate", nil)
-				end
-			end)
-		end
+        MakeFrameDraggable(BigMessageFrame)
 
-		BigMessageFrame.msg:SetTextColor(r, g, b)
-		BigMessageFrame.msg:SetText(text)
-		BigMessageFrame:Show()
-		hideAt = GetTime() + duration
-		BigMessageFrame:SetScript("OnUpdate", BigMessageFrame:GetScript("OnUpdate"))
-	end
+        BigMessageFrame:SetScript("OnUpdate", function(self, elapsed)
+            if GetTime() >= hideAt then
+                this:Hide()
+                this:SetScript("OnUpdate", nil)
+            end
+        end)
+    end
+
+    BigMessageFrame.msg:SetTextColor(r, g, b)
+    BigMessageFrame.msg:SetText(text)
+    BigMessageFrame:Show()
+    hideAt = GetTime() + duration
+    BigMessageFrame:SetScript("OnUpdate", BigMessageFrame:GetScript("OnUpdate"))
 end
 
 
+-- =========================
+-- SCAN DES CIBLES
+-- =========================
 do
-	local prevTarget
-	local foundTarget
-	local _PlaySound = PlaySound
-	local _UIErrorsFrame_OnEvent = UIErrorsFrame_OnEvent
-	local available_marks = {8, 7, 6, 5, 4, 3, 2, 1}
-	local mark_index = 1
-	local pass = function() end
+    local prevTarget
+    local foundTarget
+    local _PlaySound = PlaySound
+    local _UIErrorsFrame_OnEvent = UIErrorsFrame_OnEvent
+    local available_marks = {8, 7, 6, 5, 4, 3, 2, 1}
+    local mark_index = 1
+    local pass = function() end
 
-	local last_detect_time = 0
+    local last_detect_time = 0
 
-	function unitscan.reset()
-		prevTarget = nil
-		foundTarget = nil
-	end
+    function unitscan.reset()
+        prevTarget = nil
+        foundTarget = nil
+    end
 
-	function unitscan.restoreTarget()
-		if foundTarget and (not (prevTarget == foundTarget)) then
-			PlaySound = pass
-			TargetLastTarget()
-			PlaySound = _PlaySound
-		end
-		unitscan.reset()
-	end
+    function unitscan.restoreTarget()
+        if foundTarget and (not (prevTarget == foundTarget)) then
+            PlaySound = pass
+            TargetLastTarget()
+            PlaySound = _PlaySound
+        end
+        unitscan.reset()
+    end
 
-	function unitscan.check_for_targets()
-		local now = GetTime()
-		local cooldown = 30
-		if now - last_detect_time < cooldown then return end
-
-		mark_index = 1
-
-		local function mark_target()
-			if not UnitIsDead("target")
-			and UnitCanAttack("target", "player")
-			and foundTarget
-			and foundTarget ~= '' then
-				local currentMark = GetRaidTargetIndex("target") or 0
-				local mark = available_marks[mark_index]
-				if mark and currentMark ~= mark then
-					SetRaidTarget("target", mark)
-					mark_index = mark_index + 1
-				end
-			elseif UnitIsDead("target") then
-				SetRaidTarget("target", 0)
-			end
+    function unitscan.check_for_targets()
+        local now = GetTime()
+        local cooldown = 30
+        if now - last_detect_time < cooldown then 
+			return 
 		end
 
-		for name, _ in pairs(unitscan_targets) do
-			if available_marks[mark_index] == nil then break end
 
-			local detectedName = unitscan.target(name)
-			if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
-				unitscan.foundTarget = name
-				unitscan.toggle_target(name)
+        mark_index = 1
+
+        local function mark_target()
+            if not UnitIsDead("target")
+            and UnitCanAttack("target", "player")
+            and foundTarget
+            and foundTarget ~= '' then
+                local currentMark = GetRaidTargetIndex("target") or 0
+                local mark = available_marks[mark_index]
+                if mark and currentMark ~= mark then
+                    SetRaidTarget("target", mark)
+                    mark_index = mark_index + 1
+                end
+            elseif UnitIsDead("target") then
+                SetRaidTarget("target", 0)
+            end
+        end
+
+        for name, _ in pairs(unitscan_targets) do
+            if available_marks[mark_index] == nil then break end
+
+            local detectedName = unitscan.target(name)
+            if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
+                unitscan.foundTarget = name
+                unitscan.toggle_target(name)
 				unitscan.play_sound()
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
-				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
+                ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
 
-				mark_target()
-				last_detect_time = now
-			end
-			unitscan.restoreTarget()
-		end
+                mark_target()
+                last_detect_time = now
+            end
+            unitscan.restoreTarget()
+        end
 
-		for name, _ in pairs(unitscan_zonetargets) do
-			if available_marks[mark_index] == nil then break end
+        for name, _ in pairs(unitscan_zonetargets) do
+            if available_marks[mark_index] == nil then break end
 
-			local detectedName = unitscan.target(name)
-			if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
-				unitscan.foundTarget = name
-				unitscan.toggle_zonetarget(name)
+            local detectedName = unitscan.target(name)
+            if detectedName and detectedName == strupper(name) and not unitscan_targets_off[detectedName] then
+                unitscan.foundTarget = name
+                unitscan.toggle_zonetarget(name)
 				unitscan.play_sound()
 				unitscan.flash.animation:Play()
 				unitscan.button:set_target()
-				ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
 
-				mark_target()
-				last_detect_time = now
-			end
-			unitscan.restoreTarget()
+                ShowBigMessage("|cffffff00"..name.."|r |cffff0000Found !|r", 0, 1, 0.6, 5)
+
+                mark_target()
+                last_detect_time = now
+            end
+            unitscan.restoreTarget()
+        end
+    end
+
+    function unitscan.target(name)
+        prevTarget = UnitName("target")
+        UIErrorsFrame_OnEvent = pass
+        PlaySound = pass
+        TargetByName(name)
+        UIErrorsFrame_OnEvent = _UIErrorsFrame_OnEvent
+        PlaySound = _PlaySound
+
+        foundTarget = UnitName("target")
+
+		if not foundTarget then
+			return nil
 		end
-	end
 
-	function unitscan.target(name)
-		prevTarget = UnitName("target")
-		UIErrorsFrame_OnEvent = pass
-		PlaySound = pass
-		TargetByName(name)  -- Pas de second argument "true" en 1.12
-		UIErrorsFrame_OnEvent = _UIErrorsFrame_OnEvent
-		PlaySound = _PlaySound
-
-		foundTarget = UnitName("target")
-
-		if UnitIsPlayer("target") then
-			return foundTarget and strupper(foundTarget)
-		elseif (not UnitIsDead("target")) and UnitCanAttack("target", "player") then
-			return foundTarget and strupper(foundTarget)
-		end
-	end
+        if UnitIsPlayer("target") then
+            return foundTarget and strupper(foundTarget)
+        elseif (not UnitIsDead("target")) and UnitCanAttack("target", "player") then
+            return foundTarget and strupper(foundTarget)
+        end
+    end
 end
-
 
 function unitscan.LOAD()
 	do
@@ -565,77 +572,128 @@ function unitscan.LOAD()
 end
 
 do
-	unitscan.last_check = GetTime()
-	function unitscan.UPDATE()
-		if unitscan.scan then
-			if GetTime() - unitscan.last_check >= CHECK_INTERVAL then
-				unitscan.last_check = GetTime()
-				if (unitscan.reloadtimer and (unitscan.last_check >= unitscan.reloadtimer)) then
-					unitscan.reloadtimer = nil
-					unitscan.load_zonetargets()	
-					unitscan.resetDetectedMobs()		
-					-- unitscan.print('reloaded zone targets')
-				end				
-				unitscan.check_for_targets()
-			end
-		end
-	end
+    unitscan.last_check = GetTime()
+    function unitscan.UPDATE()
+        if unitscan.scan then
+            if GetTime() - unitscan.last_check >= unitscan.CHECK_INTERVAL then
+                unitscan.last_check = GetTime()
+
+                if (unitscan.reloadtimer and (unitscan.last_check >= unitscan.reloadtimer)) then
+                    unitscan.reloadtimer = nil
+                    unitscan.load_zonetargets()    
+                    unitscan.resetDetectedMobs()        
+                    -- unitscan.print('reloaded zone targets')
+                end                
+                
+                unitscan.check_for_targets()
+            end
+        end
+    end
 end
 
 function unitscan.print(msg)
     if DEFAULT_CHAT_FRAME then
-        local left_chevron = "|cFF00BFFF- |r"        -- bleu clair pour <
-        DEFAULT_CHAT_FRAME:AddMessage(left_chevron .. msg)
+        DEFAULT_CHAT_FRAME:AddMessage("|cFF00BFFF- |r" .. msg)
     end
 end
 
-function unitscan.sorted_targets()
-	local sorted_targets = {}
-	for key in pairs(unitscan_targets) do
-		tinsert(sorted_targets, key)
-	end
-	sort(sorted_targets, function(key1, key2) return key1 < key2 end)
-	return sorted_targets
-end
+local function alert_target(key, cooldown_table, cooldown, msg, play_alert)
+    local now = GetTime()
+    local last_alert = cooldown_table[key] or 0
 
-function unitscan.sorted_zonetargets()
-	local sorted_targets = {}
-	for key in pairs(unitscan_zonetargets) do
-		tinsert(sorted_targets, key)
-	end
-	sort(sorted_targets, function(key1, key2) return key1 < key2 end)
-	return sorted_targets
+    if not unitscan.detected_mobs[key] or (now - last_alert) >= cooldown then
+        unitscan.detected_mobs[key] = now
+        cooldown_table[key] = now
+        unitscan.print(msg)
+
+        if play_alert then
+            unitscan.play_sound()
+            unitscan.flash.animation:Play()
+        end
+
+        if unitscan.button and unitscan.button.set_target then
+            unitscan.button:set_target()
+        end
+
+        unitscan.reloadtimer = now + cooldown
+        return true
+    else
+        if unitscan.button and unitscan.button.set_target then
+            unitscan.button:set_target()
+        end
+        return false
+    end
 end
 
 function unitscan.toggle_target(name)
-	local key = strupper(name)
-	if unitscan_targets[key] then
-		unitscan_targets[key] = nil
-		unitscan.print('- ' .. key)
-	elseif key ~= '' then
-		unitscan_targets[key] = true
-		unitscan.print('+ ' .. key)
-	end
+    local key = string.upper(name)
+    if unitscan_targets_off[key] then return end
+
+    if unitscan_targets[key] then
+        alert_target(key, unitscan.last_alert_time_targets, unitscan.ALERT_COOLDOWN_TARGETS, "+ " .. key, true)
+    else
+        unitscan_targets[key] = true
+        unitscan.print("+ " .. key)
+    end
 end
 
 function unitscan.toggle_zonetarget(name, play_alert)
     local key = string.upper(name)
-    if not unitscan_targets_off[key] and unitscan_zonetargets[key] then
-        if not unitscan.detected_mobs[key] then
-            unitscan.detected_mobs[key] = true
-            unitscan.print(key .. " was found!")
-            if play_alert then
-                unitscan.play_sound()
-                unitscan.flash.animation:Play()
-            end
-            unitscan.button:set_target()
-            unitscan.reloadtimer = GetTime() + 90
-        else
-            -- Même si déjà détecté, on peut éventuellement mettre à jour le bouton
-            unitscan.button:set_target()
+    if unitscan_targets_off[key] then return end
+
+    if unitscan_zonetargets[key] then
+        alert_target(key, unitscan.last_alert_time, unitscan.ALERT_COOLDOWN, key .. " a été détecté !", play_alert)
+    end
+end
+
+function unitscan.cleanup_detected_mobs(expiration_time)
+    local now = GetTime()
+    expiration_time = expiration_time or 300
+    for key, detected_time in pairs(unitscan.detected_mobs) do
+        if now - detected_time > expiration_time then
+            unitscan.detected_mobs[key] = nil
+            unitscan.last_alert_time[key] = nil
+            unitscan.last_alert_time_targets[key] = nil
+            unitscan.last_alert_time_zonetargets[key] = nil
         end
     end
 end
+
+function unitscan.sorted_targets()
+    local sorted = {}
+    for key in pairs(unitscan_targets) do
+        table.insert(sorted, key)
+    end
+    table.sort(sorted)
+    return sorted
+end
+
+function unitscan.sorted_zonetargets()
+    local sorted = {}
+    for key in pairs(unitscan_zonetargets) do
+        table.insert(sorted, key)
+    end
+    table.sort(sorted)
+    return sorted
+end
+
+function unitscan.UPDATE()
+    local now = GetTime()
+    if not unitscan.scan then return end
+
+    if now - unitscan.last_check >= unitscan.CHECK_INTERVAL then
+        unitscan.last_check = now
+
+        if unitscan.reloadtimer and now >= unitscan.reloadtimer then
+            unitscan.reloadtimer = nil
+            if unitscan.load_zonetargets then unitscan.load_zonetargets() end
+            if unitscan.resetDetectedMobs then unitscan.resetDetectedMobs() end
+        end
+
+        if unitscan.check_for_targets then unitscan.check_for_targets() end
+    end
+end
+
 
 -- Création de la fenêtre principale
 local frame = CreateFrame("Frame", "unitscanZoneMonsterFrame", UIParent)
@@ -724,8 +782,6 @@ local function createOrReuseButton(i)
 end
 
 -- Fonction pour mettre à jour le contenu
-local maxButtonsUsed = 0  -- variable globale pour garder le max d'index utilisés
-
 local isUpdating = false
 
 function updateZoneMonsterList()
@@ -733,7 +789,7 @@ function updateZoneMonsterList()
     isUpdating = true
 
     local zone = GetZoneText()
-    frame.title:SetText("UnitScan - Zone : " .. zone)
+    frame.title:SetText("UnitScan - Zone : " .. (zone or "Unknown"))
 
     -- Cacher tous les boutons
     for _, btn in ipairs(buttons) do
@@ -797,8 +853,10 @@ function updateZoneMonsterList()
     isUpdating = false
 end
 
+-- Initial update
 updateZoneMonsterList()
 
+-- Gestion des événements
 frame:RegisterEvent("MINIMAP_ZONE_CHANGED")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:SetScript("OnEvent", function(self, event)
@@ -972,6 +1030,10 @@ SlashCmdList["UNITSCANMODE"] = function(msg)
         unitscan.print("Usage: /unitmode normal | hc")
         return
     end
-
     unitscan.load_zonetargets()
+end
+
+-- OnLoad call
+if unitscan.OnLoad then
+    unitscan.OnLoad()
 end
