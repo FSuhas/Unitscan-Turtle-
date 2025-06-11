@@ -20,11 +20,11 @@ unitscan:SetScript("OnEvent", function()
         unitscan.scan = nil
     elseif event == "PLAYER_REGEN_ENABLED" then
         unitscan.incombat = nil
-        unitscan.scan = true
+        unitscanDB.unitscan = unitscanDB.unitscan or {}
     elseif (event == "PLAYER_ENTER_COMBAT" or event == "START_AUTOREPEAT_SPELL") then
         if not unitscan.incombat then unitscan.scan = nil end
     elseif (event == "STOP_AUTOREPEAT_SPELL" or event == "PLAYER_LEAVE_COMBAT") then
-        if not unitscan.incombat then unitscan.scan = true end
+        if not unitscan.incombat then unitscanDB.unitscan = unitscanDB.unitscan or {} end
 	else
 		unitscan.load_zonetargets()
     end
