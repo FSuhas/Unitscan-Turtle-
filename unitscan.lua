@@ -46,9 +46,9 @@ unitscan:RegisterEvent'STOP_AUTOREPEAT_SPELL' -- ranged autoattack disabled
 local msglog = CreateFrame("Frame")
 msglog:RegisterEvent("PLAYER_ENTERING_WORLD")
 msglog:SetScript("OnEvent", function()
-    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00< |r|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r|cffffff00 >|r |cFF00FF00Chargé !|r")
-    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00   Plus d'options :|r |cff00FFFF/unitscan help|r")
-    UIErrorsFrame:AddMessage("|cffffff00Bon jeu sur |r|cFF00FF96Turtle WoW|r|cffffff00 !|r", 0, 1, 0.6, 0, 5)
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00< |r|cFFFFA500UnitScan |r|cFF00FF96Turtle WoW|r|cffffff00 >|r |cFF00FF00Loaded !|r")
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffff00   More information with :|r |cff00FFFF/unitscan help|r")
+    UIErrorsFrame:AddMessage("|cffffff00Happy hunting on |r|cFF00FF96Turtle WoW|r|cffffff00 !|r", 0, 1, 0.6, 0, 5)
     msglog:UnregisterEvent("PLAYER_ENTERING_WORLD")
 end)
 
